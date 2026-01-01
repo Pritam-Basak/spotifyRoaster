@@ -35,12 +35,8 @@ const Profile = () => {
         console.error('Error fetching profile data:', error);
 
         if (error.status === 401) {
-          toast({
-            title: "Please log in",
-            description: "You need to be logged in to view your profile",
-            variant: "destructive",
-          });
-          authApi.login();
+          // Don't auto-redirect, just set currentUser to null
+          setCurrentUser(null);
         } else {
           toast({
             title: "Error loading profile",
@@ -89,13 +85,17 @@ const Profile = () => {
   if (!currentUser) {
     return (
       <div className="min-h-screen pt-20 md:pt-24 pb-12 px-4 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-muted-foreground mb-4">Unable to load profile</p>
+        <div className="glass-card rounded-2xl p-8 text-center space-y-4 max-w-md w-full">
+          <Music2 className="w-16 h-16 text-primary mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-foreground">Sign in to view your profile</h2>
+          <p className="text-muted-foreground text-sm">
+            Connect your Spotify account to see your listening history, top artists, and favorite tracks.
+          </p>
           <button
             onClick={() => authApi.login()}
-            className="px-6 py-2 bg-primary text-primary-foreground rounded-full font-medium hover:bg-primary/90 transition-colors"
+            className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-colors"
           >
-            Log in again
+            Login with Spotify
           </button>
         </div>
       </div>
