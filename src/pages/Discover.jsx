@@ -14,7 +14,6 @@ const Discover = () => {
   const [artists, setArtists] = useState([]);
   const [tracks, setTracks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [authRequired, setAuthRequired] = useState(false);
   const { toast } = useToast();
 
   const tabs = [
@@ -29,39 +28,50 @@ const Discover = () => {
       try {
         setIsLoading(true);
 
-        // Fetch all data in parallel
+        // Fetch data with individual error handling
+        const fetchUsers = musicApi.getDiscoverUsers()
+          .then(data => data?.data || data || [])
+          .catch(error => {
+            console.warn('Users data not available:', error);
+            return [];
+          });
+
+        const fetchArtists = musicApi.getTopArtists()
+          .then(data => data || [])
+          .catch(error => {
+            console.warn('Artists data not available:', error);
+            return [];
+          });
+
+        const fetchTracks = musicApi.getTopTracks()
+          .then(data => data || [])
+          .catch(error => {
+            console.warn('Tracks data not available:', error);
+            return [];
+          });
+
         const [usersData, artistsData, tracksData] = await Promise.all([
-          musicApi.getDiscoverUsers(),
-          musicApi.getTopArtists(),
-          musicApi.getTopTracks(),
+          fetchUsers,
+          fetchArtists,
+          fetchTracks,
         ]);
 
         console.log('Users data:', usersData);
         console.log('Artists data:', artistsData);
         console.log('Tracks data:', tracksData);
 
-        // Extract array from response (backend returns {status, success, data})
-        setUsers(usersData?.data || usersData || []);
-        setArtists(artistsData || []);
-        setTracks(tracksData || []);
+        setUsers(usersData);
+        setArtists(artistsData);
+        setTracks(tracksData);
 
       } catch (error) {
         console.error('Error fetching discover data:', error);
 
-        if (error.status === 401) {
-          setAuthRequired(true);
-          toast({
-            title: "Please log in",
-            description: "Sign in with Spotify to view Discover",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Error loading discover data",
-            description: error.message || "Failed to load discover data",
-            variant: "destructive",
-          });
-        }
+        toast({
+          title: "Error loading discover data",
+          description: error.message || "Failed to load discover data",
+          variant: "destructive",
+        });
       } finally {
         setIsLoading(false);
       }
@@ -95,25 +105,6 @@ const Discover = () => {
   console.log('Filtered users count:', filteredUsers.length);
   console.log('Filtered artists count:', filteredArtists.length);
   console.log('Filtered tracks count:', filteredTracks.length);
-
-  if (authRequired) {
-    return (
-      <div className="min-h-screen pt-20 md:pt-24 pb-12 px-4 flex items-center justify-center">
-        <div className="glass-card rounded-2xl p-8 text-center space-y-4 max-w-md w-full">
-          <h2 className="text-2xl font-bold text-foreground">Sign in to continue</h2>
-          <p className="text-muted-foreground text-sm">
-            Connect your Spotify to discover what others are listening to.
-          </p>
-          <button
-            onClick={() => authApi.login()}
-            className="w-full px-4 py-3 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors"
-          >
-            Login with Spotify
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen pt-20 md:pt-24 pb-12 px-4">
